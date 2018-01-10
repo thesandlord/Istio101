@@ -365,3 +365,6 @@ You can see a lot of cool metrics in the default Istio dashboard, or customize i
 or
 
 `make delete-cluster PROJECT_ID=your-custom-id-here ZONE=your-custom-zone`
+
+
+NOTE: This is not an official Google product
