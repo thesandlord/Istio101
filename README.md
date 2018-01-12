@@ -103,7 +103,7 @@ You might notice there is no trace of Istio to be seen. This is because the Isti
 
 `kubectl get pods --namespace=istio-system`
 
-We have launched Istio is "auto inject" mode. This means that any Pods that Kubernetes creates will automatically get a Istio sidecar proxy attached to it. This proxy will enforce Istio policies without any action from the app! You can also run Istio in the normal mode, and add the proxy into the Kubernetes YAML manually. Again, there is no change to the app, but the Kubernetes Deployment is manually patched. This is useful if you want some services to bypass Istio.
+We have launched Istio in "auto inject" mode. This means that any Pods that Kubernetes creates will automatically get a Istio sidecar proxy attached to it. This proxy will enforce Istio policies without any action from the app! You can also run Istio in the normal mode, and add the proxy into the Kubernetes YAML manually. Again, there is no change to the app, but the Kubernetes Deployment is manually patched. This is useful if you want some services to bypass Istio.
 
 ## Trying it out
 
