@@ -32,7 +32,7 @@ This will create an Alpha cluster called "my-istio-cluster" with 4 nodes in the 
 `make create-cluster PROJECT_ID=your-custom-id-here ZONE=your-custom-zone`
 
 ## Istio Setup
-You need to install the [istioclt tool locally](https://github.com/istio/istio/releases). This release has been tested with Istio 0.2.10. Compatibility with later versions of Istio is not guaranteed, but please send Pull Requests if you test with a later version of Istio. I will be updating this demo when Istio releases a stable version.
+You need to install the [istioctl tool locally](https://github.com/istio/istio/releases). This release has been tested with Istio 0.2.10. Compatibility with later versions of Istio is not guaranteed, but please send Pull Requests if you test with a later version of Istio. I will be updating this demo when Istio releases a stable version.
 
 To deploy Istio into the cluster, run
 
