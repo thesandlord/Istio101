@@ -15,32 +15,38 @@ ZONE=us-west1-b
 ZIPKIN_POD_NAME=$(shell kubectl -n istio-system get pod -l app=zipkin -o jsonpath='{.items[0].metadata.name}')
 SERVICEGRAPH_POD_NAME=$(shell kubectl -n istio-system get pod -l app=servicegraph -o jsonpath='{.items[0].metadata.name}')
 GRAFANA_POD_NAME=$(shell kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}')
+GCLOUD_USER=$(shell gcloud config get-value core/account)
 
 create-cluster:
-	gcloud beta container --project "$(PROJECT_ID)" clusters create "my-istio-cluster" --zone "$(ZONE)" --username="admin" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --enable-kubernetes-alpha --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --enable-legacy-authorization
+	gcloud container --project "$(PROJECT_ID)" clusters create "my-istio-cluster" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.9
+	kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(GCLOUD_USER)
 deploy-istio:
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/istio.yaml'
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/istio-initializer.yaml'
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/addons/zipkin.yaml'
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/addons/prometheus.yaml'
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/addons/servicegraph.yaml'
-	kubectl apply -f 'https://raw.githubusercontent.com/istio/istio/4bc1381/install/kubernetes/addons/grafana.yaml'
+	kubectl apply -f istio-0.6/install/kubernetes/istio.yaml
+	./istio-0.6/install/kubernetes/webhook-create-signed-cert.sh --service istio-sidecar-injector --namespace istio-system --secret sidecar-injector-certs
+	kubectl apply -f istio-0.6/install/kubernetes/istio-sidecar-injector-configmap-release.yaml
+	cat istio-0.6/install/kubernetes/istio-sidecar-injector.yaml | ./istio-0.6/install/kubernetes/webhook-patch-ca-bundle.sh > istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+	kubectl apply -f istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+	kubectl apply -f istio-0.6/install/kubernetes/addons/prometheus.yaml
+	kubectl apply -f istio-0.6/install/kubernetes/addons/grafana.yaml
+	kubectl apply -f istio-0.6/install/kubernetes/addons/zipkin.yaml
+	kubectl apply -f istio-0.6/install/kubernetes/addons/servicegraph.yaml
+	kubectl label namespace default istio-injection=enabled
 deploy-stuff:
 	kubectl apply -f ./configs/kube/services.yaml
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/kube/deployments.yaml | kubectl apply -f -
 get-stuff:
 	kubectl get pods && kubectl get svc && kubectl get ingress
 egress:
-	istioctl create -f ./configs/istio/egress.yaml
+	./istio-0.6/bin/istioctl create -f ./configs/istio/egress.yaml
 prod:
-	istioctl create -f ./configs/istio/routing-1.yaml
+	./istio-0.6/bin/istioctl create -f ./configs/istio/routing-1.yaml
 retry:
-	istioctl replace -f ./configs/istio/routing-2.yaml
+	./istio-0.6/bin/istioctl replace -f ./configs/istio/routing-2.yaml
 ingress:
 	kubectl delete svc frontend
 	kubectl apply -f ./configs/kube/services-2.yaml
 canary:
-	istioctl create -f ./configs/istio/routing-3.yaml
+	./istio-0.6/bin/istioctl create -f ./configs/istio/routing-3.yaml
 
 
 start-monitoring-services:
@@ -54,10 +60,10 @@ run-local:
 restart-all:
 	kubectl delete pods --all
 delete-route-rules:
-	-istioctl delete routerules frontend-route
-	-istioctl delete routerules middleware-dev-route
-	-istioctl delete routerules middleware-route
-	-istioctl delete routerules backend-route
+	-./istio-0.6/bin/istioctl delete routerules frontend-route
+	-./istio-0.6/bin/istioctl delete routerules middleware-dev-route
+	-./istio-0.6/bin/istioctl delete routerules middleware-route
+	-./istio-0.6/bin/istioctl delete routerules backend-route
 delete-cluster:
 	kubectl delete service frontend
 	kubectl delete ingress istio-ingress
