@@ -18,27 +18,26 @@ Run this in another terminal:
 # Setup
 
 ## Cluster Setup
-You need a Kubernetes 1.7.3 or newer cluster with Alpha features and RBAC (Role-Based Access
-Control) enabled.
+You need a Kubernetes 1.9 or newer cluster.
 
-You will also need Docker and kubectl 1.7.3 or newer installed on your machine, as well as the Google Cloud SDK. You can install the Google Cloud SDK (which will also install kubectl) [here](https://cloud.google.com/sdk).
+You will also need Docker and kubectl 1.8.x or newer installed on your machine, as well as the Google Cloud SDK. You can install the Google Cloud SDK (which will also install kubectl) [here](https://cloud.google.com/sdk).
 
 To create the cluster with Google Kubernetes Engine, run this command:
 
 `make create-cluster`
 
-This will create an Alpha cluster called "my-istio-cluster" with 4 nodes in the us-west1-b region. This will deploy into the current active project set in your Google Cloud SDK. You can change this by passing in a custom value for the Project ID and/or Zone.
+This will create a cluster called "my-istio-cluster" with 4 nodes in the us-west1-b region. This will deploy into the current active project set in your Google Cloud SDK. You can change this by passing in a custom value for the Project ID and/or Zone.
 
 `make create-cluster PROJECT_ID=your-custom-id-here ZONE=your-custom-zone`
 
 ## Istio Setup
-You need to install the [istioctl tool locally](https://github.com/istio/istio/releases). This release has been tested with Istio 0.2.10. Compatibility with later versions of Istio is not guaranteed, but please send Pull Requests if you test with a later version of Istio. I will be updating this demo when Istio releases a stable version.
+This project assumes you are running on x64 Linux, and I have embedded the Istio binary into this repo so you don't need to install anything. The Istio version is 0.6.0. If you are running on another platform, I highly reccomend using [Google Cloud Shell](https://cloud.google.com/shell) to get a free x64 Linux environment.
 
 To deploy Istio into the cluster, run
 
 `make deploy-istio`
 
-This will deploy a pinned version of the Istio system into your Kubernetes Cluster. Istio will create its own Kubernetes Namespace and a bunch of services and deployments. In addition, this command will install helper services. Zipkin for tracing, Prometheus for monitoring, Servicegraph to visualize your microservices, and Grafana for viewing metrics.
+This will deploy the Istio services and control plane into your Kubernetes Cluster. Istio will create its own Kubernetes Namespace and a bunch of services and deployments. In addition, this command will install helper services. Zipkin for tracing, Prometheus for monitoring, Servicegraph to visualize your microservices, and Grafana for viewing metrics.
 
 ## Start Helper Services
 
