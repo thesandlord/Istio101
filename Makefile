@@ -12,13 +12,14 @@
 # limitations under the License.
 PROJECT_ID=$(shell gcloud config list project --format=flattened | awk 'FNR == 1 {print $$2}')
 ZONE=us-west1-b
+CLUSTER_NAME=my-istio-cluster
 ZIPKIN_POD_NAME=$(shell kubectl -n istio-system get pod -l app=zipkin -o jsonpath='{.items[0].metadata.name}')
 SERVICEGRAPH_POD_NAME=$(shell kubectl -n istio-system get pod -l app=servicegraph -o jsonpath='{.items[0].metadata.name}')
 GRAFANA_POD_NAME=$(shell kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}')
 GCLOUD_USER=$(shell gcloud config get-value core/account)
 
 create-cluster:
-	gcloud container --project "$(PROJECT_ID)" clusters create "my-istio-cluster" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.9
+	gcloud container --project "$(PROJECT_ID)" clusters create "$(CLUSTER_NAME)" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.9
 	kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(GCLOUD_USER)
 deploy-istio:
 	kubectl apply -f istio-0.6/install/kubernetes/istio.yaml
@@ -54,7 +55,8 @@ start-monitoring-services:
 build:
 	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/
 push:
-	gcloud docker -- push gcr.io/$(PROJECT_ID)/istiotest:1.0
+	gcloud auth configure-docker
+	docker push gcr.io/$(PROJECT_ID)/istiotest:1.0
 run-local:
 	docker run -ti -p 3000:3000 gcr.io/$(PROJECT_ID)/istiotest:1.0
 restart-all:
@@ -67,4 +69,4 @@ delete-route-rules:
 delete-cluster:
 	kubectl delete service frontend
 	kubectl delete ingress istio-ingress
-	gcloud container clusters delete "my-istio-cluster" --zone "$(ZONE)"
+	gcloud container clusters delete "$(CLUSTER_NAME)" --zone "$(ZONE)"
