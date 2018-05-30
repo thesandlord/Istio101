@@ -62,10 +62,10 @@ run-local:
 restart-all:
 	kubectl delete pods --all
 delete-route-rules:
-	-./istio-0.6/bin/istioctl delete routerules frontend-route
-	-./istio-0.6/bin/istioctl delete routerules middleware-dev-route
-	-./istio-0.6/bin/istioctl delete routerules middleware-route
-	-./istio-0.6/bin/istioctl delete routerules backend-route
+	-./istio-0.6/bin/istioctl delete routerules frontend-route -n default
+	-./istio-0.6/bin/istioctl delete routerules middleware-dev-route -n default
+	-./istio-0.6/bin/istioctl delete routerules middleware-route -n default
+	-./istio-0.6/bin/istioctl delete routerules backend-route -n default
 delete-cluster:
 	kubectl delete service frontend
 	kubectl delete ingress istio-ingress
