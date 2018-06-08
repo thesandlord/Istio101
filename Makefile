@@ -14,8 +14,10 @@ PROJECT_ID=$(shell gcloud config list project --format=flattened | awk 'FNR == 1
 ZONE=us-west1-b
 CLUSTER_NAME=my-istio-cluster
 ZIPKIN_POD_NAME=$(shell kubectl -n istio-system get pod -l app=zipkin -o jsonpath='{.items[0].metadata.name}')
+JAEGER_POD_NAME=$(shell kubectl -n istio-system get pod -l app=jaeger -o jsonpath='{.items[0].metadata.name}')
 SERVICEGRAPH_POD_NAME=$(shell kubectl -n istio-system get pod -l app=servicegraph -o jsonpath='{.items[0].metadata.name}')
 GRAFANA_POD_NAME=$(shell kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}')
+PROMETHEUS_POD_NAME=$(shell kubectl -n istio-system get pod -l app=prometheus -o jsonpath='{.items[0].metadata.name}')
 GCLOUD_USER=$(shell gcloud config get-value core/account)
 
 create-cluster:
@@ -28,8 +30,8 @@ deploy-istio:
 	cat istio-0.6/install/kubernetes/istio-sidecar-injector.yaml | ./istio-0.6/install/kubernetes/webhook-patch-ca-bundle.sh > istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
 	kubectl apply -f istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
 	kubectl apply -f istio-0.6/install/kubernetes/addons/prometheus.yaml
+	kubectl apply -n istio-system -f istio-0.6/install/kubernetes/addons/jaeger.yaml
 	kubectl apply -f istio-0.6/install/kubernetes/addons/grafana.yaml
-	kubectl apply -f istio-0.6/install/kubernetes/addons/zipkin.yaml
 	kubectl apply -f istio-0.6/install/kubernetes/addons/servicegraph.yaml
 	kubectl label namespace default istio-injection=enabled
 deploy-stuff:
@@ -51,7 +53,7 @@ canary:
 
 
 start-monitoring-services:
-	$(shell kubectl -n istio-system port-forward $(ZIPKIN_POD_NAME) 9411:9411 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000)
+	$(shell kubectl -n istio-system port-forward $(JAEGER_POD_NAME) 16686:16686 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000 & kubectl -n istio-system port-forward $(PROMETHEUS_POD_NAME) 9090:9090))
 build:
 	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/
 push:
@@ -67,6 +69,6 @@ delete-route-rules:
 	-./istio-0.6/bin/istioctl delete routerules middleware-route
 	-./istio-0.6/bin/istioctl delete routerules backend-route
 delete-cluster:
-	kubectl delete service frontend
-	kubectl delete ingress istio-ingress
+	-kubectl delete service frontend
+	-kubectl delete ingress istio-ingress
 	gcloud container clusters delete "$(CLUSTER_NAME)" --zone "$(ZONE)"

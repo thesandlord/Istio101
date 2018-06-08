@@ -21,7 +21,15 @@ data:
       - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
         action: keep
         regex: istio-system;istio-mixer;prometheus
-
+        
+    - job_name: 'fib-metrics'
+      # Override the global default and scrape targets from this job every 5 seconds.
+      scrape_interval: 5s
+      # metrics_path defaults to '/metrics'
+      # scheme defaults to 'http'.
+      static_configs:
+      - targets: ['frontend.default:80', 'middleware.default:80', 'backend.default:80']
+      
     - job_name: 'envoy'
       # Override the global default and scrape targets from this job every 5 seconds.
       scrape_interval: 5s
