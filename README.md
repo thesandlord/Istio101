@@ -53,7 +53,7 @@ To build and push the code, run:
 
 `make build push`
 
-This will create the Docker contaienr and push it up to your Google Container Registry. 
+This will create the Docker container and push it up to your Google Container Registry. 
 
 Again, you can pass in a custom project ID, but make sure it is the same as before:
 
@@ -126,7 +126,7 @@ You can see the Egress rule that we are going to apply [here](./configs/istio/eg
 
 To apply this rule, run:
 
-`istioctl create -f ./configs/istio/egress.yaml`
+`./istio-0.6/bin/istioctl create -f ./configs/istio/egress.yaml`
 
 Now, you should see the services fully working!
 
@@ -168,7 +168,7 @@ spec:
 ```
 You can see that we set up a routing rule per Kubernetes service, and we can use native Kubernetes labels to pick which deployments get sent traffic.
 
-`istioctl create -f ./configs/istio/routing-1.yaml`
+`./istio-0.6/bin/istioctl create -f ./configs/istio/routing-1.yaml`
 
 Now all traffic will be sent to the Prod Service
 
@@ -205,9 +205,13 @@ With a 30% failure percentage, you can see the app failing a lot, but sometimes 
 
 This means that Istio will retry the request three times before giving up, and will wait 2 seconds per retry (in case the downstream service hangs). Your app just sees it as one request, all the retry complexity is abstracted away.
 
+Cleanup the previous rule:
+
+`./istio-0.6/bin/istioctl delete -f ./configs/istio/routing-1.yaml`
+
 Apply the rule:
 
-`istioctl create -f ./configs/istio/routing-2.yaml `
+`./istio-0.6/bin/istioctl create -f ./configs/istio/routing-2.yaml`
 
 And refresh the page:
 
@@ -311,9 +315,13 @@ The key part:
 
 The precedence is normally 0, but here we are setting it to 1. The higher the number, the higher the priority. This means that this rule will take priority over the normal rule that sends all traffic to Prod. Then, we use the match to only apply this rule if the header "x-dev-user" exactly matches "super-secret". You can see all the match rules [here](https://istio.io/docs/reference/config/traffic-rules/routing-rules.html#matchcondition).
 
+Cleanup the previous rule:
+
+`./istio-0.6/bin/istioctl delete -f ./configs/istio/routing-2.yaml`
+
 Apply this file:
 
-`istioctl create -f ./configs/istio/routing-3.yaml`
+`./istio-0.6/bin/istioctl create -f ./configs/istio/routing-3.yaml`
 
 And now, when you send the proper header, Istio automatically routes you to the right service.
 
