@@ -315,10 +315,6 @@ The key part:
 
 The precedence is normally 0, but here we are setting it to 1. The higher the number, the higher the priority. This means that this rule will take priority over the normal rule that sends all traffic to Prod. Then, we use the match to only apply this rule if the header "x-dev-user" exactly matches "super-secret". You can see all the match rules [here](https://istio.io/docs/reference/config/traffic-rules/routing-rules.html#matchcondition).
 
-Cleanup the previous rule:
-
-`./istio-0.6/bin/istioctl delete -f ./configs/istio/routing-2.yaml`
-
 Apply this file:
 
 `./istio-0.6/bin/istioctl create -f ./configs/istio/routing-3.yaml`
