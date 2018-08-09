@@ -10,15 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-kind: EgressRule
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
 metadata:
   name: jsontime
-  namespace: default
 spec:
-  destination:
-    service: time.jsontest.com
+  hosts:
+  - time.jsontest.com
   ports:
-    - port: 80
-      protocol: http
-    - port: 443
-      protocol: https
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS

@@ -1,0 +1,44 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: frontend
+spec:
+  host: frontend
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: prod
+    labels:
+      version: prod
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: middleware
+spec:
+  host: middleware
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: prod
+    labels:
+      version: prod
+  - name: canary
+    labels:
+      version: canary
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: backend
+spec:
+  host: backend
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: prod
+    labels:
+      version: prod

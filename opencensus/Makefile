@@ -34,10 +34,8 @@ get-logs:
 	kubectl logs --tail=9 $(shell kubectl get pod -l app=frontend -o jsonpath='{.items[0].metadata.name}') frontend
 	kubectl logs --tail=9 $(shell kubectl get pod -l app=middleware -o jsonpath='{.items[0].metadata.name}') middleware
 	kubectl logs --tail=9 $(shell kubectl get pod -l app=backend -o jsonpath='{.items[0].metadata.name}') backend
-deploy-stuff:
-	-kubectl delete svc frontend
+deploy-opencensus-code:
 	kubectl apply -f ./config/config.yaml
-	kubectl apply -f ./config/services.yaml
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./config/deployment.yaml | kubectl apply -f -
 update-deployment:
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./config/deployment2.yaml | kubectl apply -f -

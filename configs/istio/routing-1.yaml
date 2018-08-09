@@ -10,38 +10,44 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: config.istio.io/v1alpha2
-kind: RouteRule
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
-  name: frontend-route
-  namespace: default
+  name: frontend
 spec:
-  destination:
-    name: frontend
-  route:
-  - labels:
-      version: prod
+  hosts:
+  - "*"
+  gateways:
+  - my-gateway
+  http:
+  - route:
+    - destination:
+        host: frontend
+        subset: prod
 ---
-apiVersion: config.istio.io/v1alpha2
-kind: RouteRule
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
-  name: middleware-route
-  namespace: default
+  name: middleware
 spec:
-  destination:
-    name: middleware
-  route:
-  - labels:
-      version: prod
+  hosts:
+  - middleware
+  http:
+  - route:
+    - destination:
+        host: middleware
+        subset: prod
 ---
-apiVersion: config.istio.io/v1alpha2
-kind: RouteRule
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
-  name: backend-route
-  namespace: default
+  name: backend
 spec:
-  destination:
-    name: backend
-  route:
-  - labels:
-      version: prod
+  hosts:
+  - backend
+  http:
+  - route:
+    - destination:
+        host: backend
+        subset: prod
+---

@@ -19,56 +19,73 @@ SERVICEGRAPH_POD_NAME=$(shell kubectl -n istio-system get pod -l app=servicegrap
 GRAFANA_POD_NAME=$(shell kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}')
 PROMETHEUS_POD_NAME=$(shell kubectl -n istio-system get pod -l app=prometheus -o jsonpath='{.items[0].metadata.name}')
 GCLOUD_USER=$(shell gcloud config get-value core/account)
+CONTAINER_NAME=istiotest
+
+download-istio:
+	wget https://github.com/istio/istio/releases/download/1.0.0/istio-1.0.0-linux.tar.gz
+	tar -zxvf istio-1.0.0-linux.tar.gz
+genereate-istio-template:
+	helm template istio-1.0.0/install/kubernetes/helm/istio --name istio --namespace istio-system --set global.mtls.enabled=true --set tracing.enabled=true --set servicegraph.enabled=true --set grafana.enabled=true > istio.yaml
 
 create-cluster:
-	gcloud container --project "$(PROJECT_ID)" clusters create "$(CLUSTER_NAME)" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.9
+	gcloud container --project "$(PROJECT_ID)" clusters create "$(CLUSTER_NAME)" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.10
 	kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(GCLOUD_USER)
 deploy-istio:
-	kubectl apply -f istio-0.6/install/kubernetes/istio.yaml
-	./istio-0.6/install/kubernetes/webhook-create-signed-cert.sh --service istio-sidecar-injector --namespace istio-system --secret sidecar-injector-certs
-	kubectl apply -f istio-0.6/install/kubernetes/istio-sidecar-injector-configmap-release.yaml
-	cat istio-0.6/install/kubernetes/istio-sidecar-injector.yaml | ./istio-0.6/install/kubernetes/webhook-patch-ca-bundle.sh > istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
-	kubectl apply -f istio-0.6/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
-	kubectl apply -f istio-0.6/install/kubernetes/addons/prometheus.yaml
-	kubectl apply -n istio-system -f istio-0.6/install/kubernetes/addons/jaeger.yaml
-	kubectl apply -f istio-0.6/install/kubernetes/addons/grafana.yaml
-	kubectl apply -f istio-0.6/install/kubernetes/addons/servicegraph.yaml
-	kubectl label namespace default istio-injection=enabled
+	kubectl create namespace istio-system
+	kubectl apply -f istio.yaml
+	kubectl label namespace default istio-injection=enabled --overwrite
+	sleep 60
 deploy-stuff:
 	kubectl apply -f ./configs/kube/services.yaml
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/kube/deployments.yaml | kubectl apply -f -
 get-stuff:
-	kubectl get pods && kubectl get svc && kubectl get ingress
-egress:
-	./istio-0.6/bin/istioctl create -f ./configs/istio/egress.yaml
-prod:
-	./istio-0.6/bin/istioctl create -f ./configs/istio/routing-1.yaml
-retry:
-	./istio-0.6/bin/istioctl replace -f ./configs/istio/routing-2.yaml
+	kubectl get pods && kubectl get svc && kubectl get svc istio-ingressgateway -n istio-system
+
 ingress:
-	kubectl delete svc frontend
-	kubectl apply -f ./configs/kube/services-2.yaml
+	kubectl apply -f ./configs/istio/ingress.yaml
+egress:
+	kubectl apply -f ./configs/istio/egress.yaml
+prod:
+	kubectl apply -f ./configs/istio/destinationrules.yaml
+	kubectl apply -f ./configs/istio/routing-1.yaml
+retry:
+	kubectl apply -f ./configs/istio/routing-2.yaml
 canary:
-	./istio-0.6/bin/istioctl create -f ./configs/istio/routing-3.yaml
+	kubectl apply -f ./configs/istio/routing-3.yaml
 
 
 start-monitoring-services:
-	$(shell kubectl -n istio-system port-forward $(JAEGER_POD_NAME) 16686:16686 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000 & kubectl -n istio-system port-forward $(PROMETHEUS_POD_NAME) 9090:9090))
+	$(shell kubectl -n istio-system port-forward $(JAEGER_POD_NAME) 16686:16686 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000 & kubectl -n istio-system port-forward $(PROMETHEUS_POD_NAME) 9090:9090)
 build:
-	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/
+	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-vanilla
+	docker build -t gcr.io/$(PROJECT_ID)/istio-opencensus-simple:1.0 ./code/code-opencensus-simple
+	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-vanilla
 push:
 	gcloud auth configure-docker
 	docker push gcr.io/$(PROJECT_ID)/istiotest:1.0
+	docker push gcr.io/$(PROJECT_ID)/istio-opencensus-simple:1.0
 run-local:
-	docker run -ti -p 3000:3000 gcr.io/$(PROJECT_ID)/istiotest:1.0
-restart-all:
-	kubectl delete pods --all
-delete-route-rules:
-	-./istio-0.6/bin/istioctl delete routerules frontend-route
-	-./istio-0.6/bin/istioctl delete routerules middleware-dev-route
-	-./istio-0.6/bin/istioctl delete routerules middleware-route
-	-./istio-0.6/bin/istioctl delete routerules backend-route
-delete-cluster:
+	docker run -ti -p 3000:3000 gcr.io/$(PROJECT_ID)/$(CONTAINER_NAME):1.0
+restart-demo:
+	-kubectl delete svc --all
+	-kubectl delete deployment --all
+	-kubectl delete VirtualService --all
+	-kubectl delete DestinationRule --all
+	-kubectl delete Gateway --all
+	-kubectl delete ServiceEntry --all
+uninstall-istio:
+	-kubectl delete ns istio-system
+delete-cluster: uninstall-istio
 	-kubectl delete service frontend
 	-kubectl delete ingress istio-ingress
 	gcloud container clusters delete "$(CLUSTER_NAME)" --zone "$(ZONE)"
+
+start-opencensus-demo: deploy-stuff ingress egress prod
+	kubectl delete deployment middleware-canary
+
+deploy-opencensus-code:
+	kubectl apply -f ./configs/opencensus/config.yaml
+	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/opencensus/deployment.yaml | kubectl apply -f -
+
+update-opencensus-deployment:
+	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/opencensus/deployment2.yaml | kubectl apply -f -
