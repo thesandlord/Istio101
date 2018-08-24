@@ -10,17 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: networking.istio.io/v1alpha3
-kind: ServiceEntry
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: jsontime
-spec:
-  hosts:
-  - time.jsontest.com
-  ports:
-  - number: 80
-    name: http
-    protocol: HTTP
-  - number: 443
-    name: https
-    protocol: HTTPS
+  name: jaeger
+data:
+  host: "jaeger-agent.istio-system"
+  port: "6832"

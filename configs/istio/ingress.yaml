@@ -11,6 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: frontend
@@ -23,39 +38,5 @@ spec:
   - route:
     - destination:
         host: frontend
-        subset: prod
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: middleware
-spec:
-  hosts:
-  - middleware
-  http:
-  - route:
-    - destination:
-        host: middleware
-        subset: prod
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: backend
-spec:
-  hosts:
-  - backend
-  http:
-  - route:
-    - destination:
-        host: backend
-        subset: prod
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
+        port:
+          number: 80

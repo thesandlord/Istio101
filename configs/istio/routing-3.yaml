@@ -10,24 +10,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: config.istio.io/v1alpha2
-kind: RouteRule
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
-  name: middleware-canary-route
-  namespace: default
+  name: middleware
 spec:
-  precedence: 1
-  match:
-    request:
-      headers:
+  hosts:
+  - middleware
+  http:
+  - match:
+    - headers:
         x-dev-user:
           exact: super-secret
-  destination:
-    name: middleware
-  route:
-  - labels:
-      version: canary
-  httpReqRetries:
-    simpleRetry:
+    route:
+      - destination:
+          host: middleware
+          subset: canary
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+  - route:
+    - destination:
+        host: middleware
+        subset: prod
+    retries:
       attempts: 3
       perTryTimeout: 2s

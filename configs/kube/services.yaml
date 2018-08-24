@@ -23,7 +23,6 @@ spec:
   - port: 80
     targetPort: 3000
     name: http
-  type: LoadBalancer
 ---
 apiVersion: v1
 kind: Service

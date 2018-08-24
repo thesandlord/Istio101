@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: jaeger
-data:
-  endpoint: "http://jaeger-collector.istio-system:14268"

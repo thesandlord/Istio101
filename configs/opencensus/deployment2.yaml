@@ -1,0 +1,113 @@
+#	Copyright 2018, Google, Inc.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: frontend-prod
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: prod
+    spec:
+      containers:
+      - name: frontend
+        image: gcr.io/<PROJECT_ID>/istio-opencensus-full:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SERVICE_NAME
+          value: "frontend"
+        - name: UPSTREAM_URI
+          value: "http://middleware/"
+        - name: JAEGER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: host
+        - name: JAEGER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: port
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: middleware-prod
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: middleware
+        version: prod
+    spec:
+      containers:
+      - name: middleware
+        image: gcr.io/<PROJECT_ID>/istio-opencensus-full:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SERVICE_NAME
+          value: "middleware"
+        - name: UPSTREAM_URI
+          value: "http://backend/"
+        - name: JAEGER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: host
+        - name: JAEGER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: port
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: backend-prod
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: prod
+    spec:
+      containers:
+      - name: backend
+        image: gcr.io/<PROJECT_ID>/istio-opencensus-full:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SERVICE_NAME
+          value: "backend"
+        - name: UPSTREAM_URI
+          value: "http://time.jsontest.com"
+        - name: JAEGER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: host
+        - name: JAEGER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger
+              key: port
