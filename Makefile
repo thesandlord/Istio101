@@ -57,15 +57,16 @@ canary:
 start-monitoring-services:
 	$(shell kubectl -n istio-system port-forward $(JAEGER_POD_NAME) 16686:16686 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000 & kubectl -n istio-system port-forward $(PROMETHEUS_POD_NAME) 9090:9090)
 build:
-	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-vanilla
+	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-only-istio
 	docker build -t gcr.io/$(PROJECT_ID)/istio-opencensus-simple:1.0 ./code/code-opencensus-simple
-	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-vanilla
+	docker build -t gcr.io/$(PROJECT_ID)/istio-opencensus-full:1.0 ./code/code-opencensus-full
 push:
-	gcloud auth configure-docker
+	-gcloud auth configure-docker
 	docker push gcr.io/$(PROJECT_ID)/istiotest:1.0
 	docker push gcr.io/$(PROJECT_ID)/istio-opencensus-simple:1.0
+	docker push gcr.io/$(PROJECT_ID)/istio-opencensus-full:1.0
 run-local:
-	docker run -ti -p 3000:3000 gcr.io/$(PROJECT_ID)/$(CONTAINER_NAME):1.0
+	docker run -ti --network host gcr.io/$(PROJECT_ID)/$(CONTAINER_NAME):1.0
 restart-demo:
 	-kubectl delete svc --all
 	-kubectl delete deployment --all
@@ -81,7 +82,6 @@ delete-cluster: uninstall-istio
 	gcloud container clusters delete "$(CLUSTER_NAME)" --zone "$(ZONE)"
 
 start-opencensus-demo: deploy-stuff ingress egress prod
-	kubectl delete deployment middleware-canary
 
 deploy-opencensus-code:
 	kubectl apply -f ./configs/opencensus/config.yaml
@@ -89,3 +89,6 @@ deploy-opencensus-code:
 
 update-opencensus-deployment:
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/opencensus/deployment2.yaml | kubectl apply -f -
+
+run-jaeger-local:
+	docker run -ti --name jaeger -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 --network host jaegertracing/all-in-one:latest
