@@ -216,6 +216,14 @@ data:
       scrape_interval: 15s
     scrape_configs:
 
+    - job_name: 'fib-metrics'
+      # Override the global default and scrape targets from this job every 5 seconds.
+      scrape_interval: 5s
+      # metrics_path defaults to '/metrics'
+      # scheme defaults to 'http'.
+      static_configs:
+      - targets: ['frontend.default:9464', 'middleware.default:9464', 'backend.default:9464']
+
     - job_name: 'istio-mesh'
       # Override the global default and scrape targets from this job every 5 seconds.
       scrape_interval: 5s

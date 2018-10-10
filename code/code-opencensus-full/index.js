@@ -17,6 +17,14 @@ const port = process.env.PORT || 3000
 const upstream_uri = process.env.UPSTREAM_URI || 'http://time.jsontest.com/'
 const service_name = process.env.SERVICE_NAME || 'opencensus-test-1-v1'
 
+const express = require('express')
+const app = express()
+const request = require('request-promise-native')
+
+
+// Start of OpenCensus setup ----------------------------------------------------------------------------
+
+const opencensus = require('@opencensus/core')
 const tracing = require('@opencensus/nodejs')
 const propagation = require('@opencensus/propagation-b3')
 const b3 = new propagation.B3Format()
@@ -39,9 +47,26 @@ tracing.start({
     exporter: exporter
 });
 
-const express = require('express')
-const app = express()
-const request = require('request-promise-native')
+
+// Set up Prometheus
+const prometheus = require('@opencensus/exporter-prometheus');
+
+const prometheusExporter = new prometheus.PrometheusStatsExporter({
+    startServer: true
+})
+
+// Set up custom stats
+const stats = new opencensus.Stats()
+const tags = {ServiceName: service_name};
+const tagKeys = Object.keys(tags);
+
+const fibCount = stats.createMeasureInt64('fib function invocation', '1')
+stats.createView('fib_count', fibCount, 0, tagKeys,'number of fib functions calls over time', null)
+
+stats.registerExporter(prometheusExporter)
+
+// End of OpenCensus setup ----------------------------------------------------------------------------
+
 
 app.get('/', async(req, res) => {
 
@@ -90,6 +115,7 @@ function oddOrEven(span) {
 }
 
 function fibonacci(num) {
+  stats.record({measure: fibCount, tags, value: 1})
   if (num <= 1) return 1;
   return fibonacci(num - 1) + fibonacci(num - 2);
 }
