@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 const port = process.env.PORT || 3000
-const upstream_uri = process.env.UPSTREAM_URI || 'http://time.jsontest.com/'
+const upstream_uri = process.env.UPSTREAM_URI || 'http://worldclockapi.com/api/json/utc/now'
 const service_name = process.env.SERVICE_NAME || 'opencensus-test-1-v1'
 
 const express = require('express')

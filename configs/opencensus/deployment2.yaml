@@ -100,7 +100,7 @@ spec:
         - name: SERVICE_NAME
           value: "backend"
         - name: UPSTREAM_URI
-          value: "http://time.jsontest.com"
+          value: "http://worldclockapi.com/api/json/utc/now"
         - name: JAEGER_HOST
           valueFrom:
             configMapKeyRef:
