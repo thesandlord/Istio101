@@ -18,6 +18,9 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
       labels:
         app: frontend
         version: prod
@@ -52,6 +55,9 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
       labels:
         app: middleware
         version: prod
@@ -86,6 +92,9 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
       labels:
         app: backend
         version: prod

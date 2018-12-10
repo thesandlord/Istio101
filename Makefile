@@ -20,12 +20,13 @@ GRAFANA_POD_NAME=$(shell kubectl -n istio-system get pod -l app=grafana -o jsonp
 PROMETHEUS_POD_NAME=$(shell kubectl -n istio-system get pod -l app=prometheus -o jsonpath='{.items[0].metadata.name}')
 GCLOUD_USER=$(shell gcloud config get-value core/account)
 CONTAINER_NAME=istiotest
+ISTIO_VERSION=1.0.5
 
 download-istio:
-	wget https://github.com/istio/istio/releases/download/1.0.0/istio-1.0.0-linux.tar.gz
-	tar -zxvf istio-1.0.0-linux.tar.gz
+	wget https://github.com/istio/istio/releases/download/$(ISTIO_VERSION)/istio-$(ISTIO_VERSION)-linux.tar.gz
+	tar -zxvf istio-$(ISTIO_VERSION)-linux.tar.gz
 genereate-istio-template:
-	helm template istio-1.0.0/install/kubernetes/helm/istio --name istio --namespace istio-system --set global.mtls.enabled=true --set tracing.enabled=true --set servicegraph.enabled=true --set grafana.enabled=true > istio.yaml
+	helm template istio-$(ISTIO_VERSION)/install/kubernetes/helm/istio --name istio --namespace istio-system --set global.mtls.enabled=true --set tracing.enabled=true --set servicegraph.enabled=true --set grafana.enabled=true > istio.yaml
 
 create-cluster:
 	gcloud container --project "$(PROJECT_ID)" clusters create "$(CLUSTER_NAME)" --zone "$(ZONE)" --machine-type "n1-standard-1" --image-type "COS" --disk-size "100" --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "4" --network "default" --enable-cloud-logging --enable-cloud-monitoring --cluster-version=1.10
@@ -55,6 +56,7 @@ canary:
 
 
 start-monitoring-services:
+	echo 'Jaeger: 16686  -  Prometheus: 9090  - Grafana: 3000'
 	$(shell kubectl -n istio-system port-forward $(JAEGER_POD_NAME) 16686:16686 & kubectl -n istio-system port-forward $(SERVICEGRAPH_POD_NAME) 8088:8088 & kubectl -n istio-system port-forward $(GRAFANA_POD_NAME) 3000:3000 & kubectl -n istio-system port-forward $(PROMETHEUS_POD_NAME) 9090:9090)
 build:
 	docker build -t gcr.io/$(PROJECT_ID)/istiotest:1.0 ./code/code-only-istio
@@ -88,8 +90,23 @@ deploy-opencensus-code:
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/opencensus/deployment.yaml | kubectl apply -f -
 
 update-opencensus-deployment:
-	kubectl apply -f ./configs/kube/services2.yaml
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/opencensus/deployment2.yaml | kubectl apply -f -
 
 run-jaeger-local:
 	docker run -ti --name jaeger -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 --network host jaegertracing/all-in-one:latest
+
+run-standalone:
+	-kubectl create ns demo
+	kubectl run demo --image=gcr.io/$(PROJECT_ID)/$(CONTAINER_NAME):1.0 --namespace demo
+
+expose-standalone:
+	kubectl expose deployment demo --target-port=3000 --port=80 --type=LoadBalancer --namespace demo
+
+get-standalone:
+	kubectl get deployment --namespace demo
+	kubectl get pods --namespace demo
+	kubectl get svc --namespace demo
+
+stop-standalone:
+	-kubectl delete svc demo --namespace demo
+	-kubectl delete ns demo 
