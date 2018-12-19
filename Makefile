@@ -36,6 +36,7 @@ deploy-istio:
 	kubectl apply -f istio.yaml
 	kubectl label namespace default istio-injection=enabled --overwrite
 	sleep 60
+    kubectl delete pod -n istio-system -l app=prometheus
 deploy-stuff:
 	kubectl apply -f ./configs/kube/services.yaml
 	-sed -e 's~<PROJECT_ID>~$(PROJECT_ID)~g' ./configs/kube/deployments.yaml | kubectl apply -f -

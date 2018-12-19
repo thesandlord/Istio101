@@ -10273,7 +10273,7 @@ data:
         target_label: pod_name
 
     - job_name: 'kubernetes-pods-istio-secure'
-      #scheme: https
+      scheme: https
       tls_config:
         ca_file: /etc/istio-certs/root-cert.pem
         cert_file: /etc/istio-certs/cert-chain.pem

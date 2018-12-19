@@ -31,6 +31,8 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
+        - containerPort: 9464
+          name: prometheus
         env:
         - name: SERVICE_NAME
           value: "frontend"
@@ -68,6 +70,8 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
+        - containerPort: 9464
+          name: prometheus
         env:
         - name: SERVICE_NAME
           value: "middleware"
@@ -105,6 +109,8 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
+        - containerPort: 9464
+          name: prometheus
         env:
         - name: SERVICE_NAME
           value: "backend"
