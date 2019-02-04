@@ -5,6 +5,11 @@ This is the code I use for my Istio 101 talk and Istio and OpenCensus talk. Plea
 Talk Video:
 [![Talk YouTube Link](https://i.ytimg.com/vi/8OjOGJKM98o/maxresdefault.jpg)](https://www.youtube.com/watch?v=8OjOGJKM98o)
 
+
+Want to get started with one click? Open this repo in Cloud Shell. It's free and has everything you need to get started.
+
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fthesandlord%2FIstio101&cloudshell_tutorial=README.md)
+
 # TL;DR - I want to skip setup
 
 Run this:
@@ -14,8 +19,6 @@ Run this:
 Run this in another terminal:
 
 `make start-monitoring-services`
-
-# Setup
 
 ## Cluster Setup
 You need a Kubernetes 1.10 or newer cluster.
